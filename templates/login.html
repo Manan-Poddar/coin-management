@@ -1,0 +1,174 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Form</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway:400,700">
+  <script src="{% static 'sweetalert2/sweetalert2.all.min.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'sweetalert2/sweetalert2.min.css' %}">
+  <style>
+    body {
+      background: #c0c0c0; 
+      font-family: Raleway, sans-serif;
+      color: #666;
+    }
+
+    .login {
+      margin: 20px auto;
+      padding: 40px 50px;
+      max-width: 300px;
+      border-radius: 5px;
+      background: #fff;
+      box-shadow: 1px 1px 1px #666;
+    }
+
+    .login input {
+      width: 100%;
+      display: block;
+      box-sizing: border-box;
+      margin: 10px 0;
+      padding: 14px 12px;
+      font-size: 16px;
+      border-radius: 2px; 
+      font-family: Raleway, sans-serif;
+    }
+
+    .login input[type=text],
+    .login input[type=password] {
+      border: 1px solid #c0c0c0;
+      transition: .2s;
+    }
+
+    .login input[type=text]:hover {
+      border-color: #F44336;
+      outline: none;
+      transition: all .2s ease-in-out;
+    } 
+
+    .login input[type=submit] {
+      border: none;
+      background: #EF5350;
+      color: white;
+      font-weight: bold;  
+      transition: 0.2s;
+      margin: 20px 0px;
+    }
+
+    .login input[type=submit]:hover {
+      background: #F44336;  
+    }
+
+    .login h2 {
+      margin: 20px 0 0; 
+      color: #EF5350;
+      font-size: 28px;
+    }
+
+    .login p {
+      margin-bottom: 40px;
+    }
+
+    .links {
+      display: table;
+      width: 100%;  
+      box-sizing: border-box;
+      border-top: 1px solid #c0c0c0;
+      margin-bottom: 10px;
+    }
+
+    .links a {
+      display: table-cell;
+      padding-top: 10px;
+    }
+
+    .links a:first-child {
+      text-align: left;
+    }
+
+    .links a:last-child {
+      text-align: right;
+    }
+
+    .login h2,
+    .login p,
+    .login a {
+      text-align: center;    
+    }
+
+    .login a {
+      text-decoration: none;  
+      font-size: .8em;
+    }
+
+    .login a:visited {
+      color: inherit;
+    }
+
+    .login a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+    <!--START: message-->	
+    {% if messages %}
+    {% for message in messages %}
+    {% if message.tags %}
+    <script>
+        var messagetag = '{{message.tags}}'
+        if (messagetag === 'danger' || messagetag === 'debug') {
+            msgtag='error'                                        
+        } else {
+            msgtag=messagetag                                      
+        }
+        Swal.fire({
+            position: 'center',
+            icon: msgtag,
+            title: '{{ message }}',
+            showConfirmButton: false,
+            showCloseButton: true
+        });
+    </script> 
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+    <!--END: message-->
+  <form class="login" id="loginForm" method="post" action="{% url 'login' %}">
+    {% csrf_token %}
+    <h2>Welcome, User!</h2>
+    <p>Please log in</p>
+    <input type="email" id="username" name="email" placeholder="Enter your email" required />
+    <input type="password" id="password" name="password" placeholder="Password" required />
+    <input type="submit" value="Log In" />
+    <div class="links">
+      <a href="{% url 'forgot-password' %}" id="forgot-password-link">Forgot password</a>
+      <a href="{% url 'signup' %}">Register </a>
+    </div>
+  </form>
+  
+
+
+<script>
+  document.getElementById('username').addEventListener('input', function() {
+      var email = this.value;
+      var forgotPasswordLink = document.getElementById('forgot-password-link');
+      console.log(email)
+      // Update the href attribute with the email as a query parameter
+      forgotPasswordLink.href = "{% url 'forgot-password' %}?email=" + encodeURIComponent(email);
+  });
+</script>
+
+
+<script>
+  document.getElementById('forgot-password-link').addEventListener('click', function(event) {
+      var emailInput = document.getElementById('username').value;
+      if (!emailInput) {
+          event.preventDefault();
+          alert('Please enter your email before proceeding.');
+      }
+  });
+</script>
+</body>
+</html>

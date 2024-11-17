@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block indextitle %}dashboard{% endblock indextitle %}
+
+{% block indexstyle %}{% endblock indexstyle %}
+
+{% block coinbody %}
+{% if messages %}
+{% for message in messages %}
+{% if message.tags %}
+<script>
+    var messagetag = '{{message.tags}}'
+    if (messagetag === 'danger' || messagetag === 'debug') {
+        msgtag='error'                                        
+    } else {
+        msgtag=messagetag                                      
+    }
+    Swal.fire({
+        position: 'center',
+        icon: msgtag,
+        title: '{{ message }}',
+        showConfirmButton: false,
+        showCloseButton: true
+    });
+</script> 
+{% endif %}
+{% endfor %}
+{% endif %}
+<!-- Slider -->
+{% comment %} <section class="section-slide">
+
+    <div class="wrap-slick1">
+        <div id="container">
+            <video id='video' controls="controls" preload='none' autoplay muted width="100%" poster="https://assets.codepen.io/32795/poster.png">
+              <source id='mp4' src="http://media.w3.org/2010/05/sintel/trailer.mp4" type='video/mp4' />
+              <source id='webm' src="http://media.w3.org/2010/05/sintel/trailer.webm" type='video/webm' />
+              <source id='ogv' src="http://media.w3.org/2010/05/sintel/trailer.ogv" type='video/ogg' />
+              <!--
+                    Track to be used for accessibility using the VTT standard. 
+          
+                    See https://www.html5rocks.com/en/tutorials/track/basics/ for more information on how to use text tracks
+                  -->
+              <track kind="subtitles" label="English subtitles" src="subtitles_en.vtt" srclang="en" default>
+              </track>
+              <!-- 
+                  We can also add more than one text track and let the user choose which one to play. There is now way to 
+                  currently do this with the built in controls so it'll have to be scripted -->
+              <track kind="subtitles" label="Deutsche Untertitel" src="subtitles_de.vtt" srclang="de">
+              </track>
+          
+              <!-- 
+                    We're not using Flash as a fallback option.
+                  -->
+              <p>Your user agent does not support the HTML5 Video element.</p>
+            </video>
+          </div> <!-- End Container -->
+    </div>
+</section> {% endcomment %}
+
+
+<section class="section-slide">
+    <div class="wrap-slick1">
+        <div class="slick1">
+            <div class="item-slick1" style="background-image: url(images/banner1.jpg);">
+                <div class="container h-full">
+                    <div class="flex-col-l-m h-full p-t-100 p-b-30 respon5">
+                        <div class="layer-slick1 animated visible-false" data-appear="fadeInDown" data-delay="0">
+                            <span class="ltext-101 cl2 respon2">
+                                Copper Collection 2024
+                            </span>
+                        </div>
+                            
+                        <div class="layer-slick1 animated visible-false" data-appear="fadeInUp" data-delay="800">
+                            <h2 class="ltext-201 cl2 p-t-19 p-b-43 respon1">
+                                New Arrivals
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="item-slick1" style="background-image: url(images/banner2.jpg);">
+                <div class="container h-full">
+                    <div class="flex-col-l-m h-full p-t-100 p-b-30 respon5">
+                        <div class="layer-slick1 animated visible-false" data-appear="rollIn" data-delay="0">
+                            <span class="ltext-101 cl2 respon2">
+                                Nickel New-Season 2024
+                            </span>
+                        </div>
+                            
+                        <div class="layer-slick1 animated visible-false" data-appear="lightSpeedIn" data-delay="800">
+                            <h2 class="ltext-201 cl2 p-t-19 p-b-43 respon1">
+                                New Arrivals
+                            </h2>
+                        </div>
+                            
+                    </div>
+                </div>
+            </div>
+
+            <div class="item-slick1" style="background-image: url(images/banner3.jpg);">
+                <div class="container h-full">
+                    <div class="flex-col-l-m h-full p-t-100 p-b-30 respon5">
+                        <div class="layer-slick1 animated visible-false" data-appear="rotateInDownLeft" data-delay="0">
+                            <span class="ltext-101 cl2 respon2">
+                                Bronze Collection 2024
+                            </span>
+                        </div>
+                            
+                        <div class="layer-slick1 animated visible-false" data-appear="rotateInUpRight" data-delay="800">
+                            <h2 class="ltext-201 cl2 p-t-19 p-b-43 respon1">
+                                New Arrivals
+                            </h2>
+                        </div>
+                            
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="sec-banner bg0 p-t-95 p-b-55">
+    <div class="container">
+        <div class="row">
+            {% for i in data %}
+            <div class="col-md-6 col-lg-3 p-b-30 m-lr-auto">
+                <!-- Block1 -->
+                <div class="block1 wrap-pic-w" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;">
+                    <div style="display: flex; align-items: center;">
+                        <img src="images/demo.jpg" alt="IMG-BANNER" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%; margin-right: 15px;">
+                        <span class="block1-name ltext-102 trans-04 p-b-8" style="font-size: 18px; font-weight: bold;">
+                            {{ i.denomination }}
+                        </span>
+                    </div>
+
+                    <a href="{% url 'coins' i.id %}" class="block1-link stext-101 cl0 trans-09" style="display: block; margin-top: 10px; color: #333; text-align: center; font-weight: bold;">
+                        View All
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<!-- Product -->
+
+{% endblock coinbody %}

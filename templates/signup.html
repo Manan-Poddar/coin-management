@@ -1,0 +1,372 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registration Form</title>
+  <script src="{% static 'sweetalert2/sweetalert2.all.min.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'sweetalert2/sweetalert2.min.css' %}">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+ 
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+ 
+    body {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+      background: linear-gradient(135deg, #FFCC00, #7D6608);
+    }
+ 
+    .container {
+      max-width: 700px;
+      width: 100%;
+      background-color: #fff;
+      padding: 25px 30px;
+      border-radius: 5px;
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+    }
+ 
+    .container .title {
+      font-size: 25px;
+      font-weight: 500;
+      position: relative;
+    }
+ 
+    .container .title::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      height: 3px;
+      width: 30px;
+      border-radius: 5px;
+      background: linear-gradient(135deg, #FFCC00, #7D6608);
+    }
+ 
+    .content form .user-details {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      margin: 20px 0 12px 0;
+    }
+ 
+    form .user-details .input-box {
+      margin-bottom: 15px;
+      width: calc(100% / 2 - 20px);
+    }
+ 
+    form .input-box span.details {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+ 
+    .user-details .input-box input {
+      height: 45px;
+      width: 100%;
+      outline: none;
+      font-size: 16px;
+      border-radius: 5px;
+      padding-left: 15px;
+      border: 1px solid #ccc;
+      border-bottom-width: 2px;
+      transition: all 0.3s ease;
+    }
+ 
+    .user-details .input-box input:focus,
+    .user-details .input-box input:valid {
+      border-color: #7D6608;
+    }
+ 
+    form .gender-details .gender-title {
+      font-size: 20px;
+      font-weight: 500;
+    }
+ 
+    form .category {
+      display: flex;
+      width: 80%;
+      margin: 14px 0;
+      justify-content: space-between;
+    }
+ 
+    form .category label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+ 
+    form .category label .dot {
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      margin-right: 10px;
+      background: #d9d9d9;
+      border: 5px solid transparent;
+      transition: all 0.3s ease;
+    }
+ 
+    #dot-1:checked~.category label .one,
+    #dot-2:checked~.category label .two,
+    #dot-3:checked~.category label .three {
+      background: #7D6608;
+      border-color: #d9d9d9;
+    }
+ 
+    form input[type="radio"] {
+      display: none;
+    }
+ 
+    form .button {
+      height: 45px;
+      margin: 35px 0;
+    }
+ 
+    form .button input {
+      height: 100%;
+      width: 100%;
+      border-radius: 5px;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, #FFCC00, #7D6608);
+    }
+ 
+    form .button input:hover {
+      background: linear-gradient(-135deg, #FFCC00, #7D6608);
+    }
+ 
+    @media (max-width: 584px) {
+      .container {
+        max-width: 100%;
+      }
+ 
+      form .user-details .input-box {
+        margin-bottom: 15px;
+        width: 100%;
+      }
+ 
+      form .category {
+        width: 100%;
+      }
+ 
+      .content form .user-details {
+        max-height: 300px;
+        overflow-y: scroll;
+      }
+ 
+      .user-details::-webkit-scrollbar {
+        width: 5px;
+      }
+    }
+ 
+      /* Gender Details Styling */
+      .gender-details {
+        margin: 20px 0;
+      }
+ 
+      .category {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+      }
+ 
+      .category label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        position: relative;
+      }
+ 
+      .category label .dot {
+        height: 20px;
+        width: 20px;
+        border-radius: 50%;
+        border: 2px solid #c0c0c0;
+        margin-right: 10px;
+        position: relative;
+      }
+ 
+      .category label .dot::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #c0c0c0;
+        transform: translate(-50%, -50%) scale(0);
+        transition: transform 0.2s;
+      }
+ 
+      input[type="radio"] {
+        display: none;
+      }
+ 
+      input[type="radio"]:checked + label .dot::before {
+        background: blue;
+        transform: translate(-50%, -50%) scale(1);
+      }
+ 
+      .gender {
+        font-size: 14px;
+      }
+ 
+    @media (max-width: 459px) {
+      .container .content .category {
+        flex-direction: column;
+      }
+    }
+  </style>
+  <style>
+    .error-message {
+        color: red;
+    }
+    .input-box {
+        margin-bottom: 10px;
+    }
+</style>
+</head>
+ 
+<body>
+  <!--START: message-->	
+  {% if messages %}
+  {% for message in messages %}
+  {% if message.tags %}
+  <script>
+      var messagetag = '{{message.tags}}'
+      if (messagetag === 'danger' || messagetag === 'debug') {
+          msgtag='error'                                        
+      } else {
+          msgtag=messagetag                                      
+      }
+      Swal.fire({
+          position: 'top-end',
+          icon: msgtag,
+          title: '{{ message }}',
+          showConfirmButton: false,
+          showCloseButton: true
+      });
+  </script> 
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  <!--END: message-->
+ 
+  <div class="container">
+ 
+    <div class="title"><a href="{% url 'login' %}">Back to Login</a></div>
+      </hr>
+    <div class="content">
+      <h3 class="mt2">Registration page</h3>
+      <form method="post" action="{% url 'signup' %}">
+        {% csrf_token %}
+        <div class="user-details">
+            <div class="input-box">
+                <label for="id_first_name">First Name</label>
+                <input type="text" name="first_name" id="id_first_name" placeholder="Enter your first name" required />
+            </div>
+            <div class="input-box">
+                <label for="id_last_name">Last Name</label>
+                <input type="text" name="last_name" id="id_last_name" placeholder="Enter your last name" required />
+            </div>
+            <div class="input-box">
+                <label for="id_email">Email</label>
+                <input type="email" name="email" id="id_email" placeholder="Enter your email" required />
+            </div>
+            <div class="input-box">
+                <label for="id_mobile_number">Phone Number</label>
+                <input type="text" name="mobile_number" id="id_mobile_number" placeholder="Enter your number" required />
+            </div>
+            <div class="input-box">
+                <label for="id_age">Age</label>
+                <input type="number" name="age" id="id_age" placeholder="Enter your age" required />
+            </div>
+            <div class="input-box">
+              <label for="id_password">Password</label>
+              <input type="password" name="password" id="id_password" placeholder="Enter your password" required />
+            </div>
+            <div class="input-box">
+                <label for="id_confirm_password">Confirm Password</label>
+                <input type="password" name="confirm_password" id="id_confirm_password" placeholder="Confirm your password" required />
+                <span id="error-message" class="error-message"></span>
+            </div>
+            <div class="input-box">
+                <label for="id_reference">Reference Name</label>
+                <input type="text" name="reference" id="id_reference" placeholder="Enter your reference name" />
+            </div>
+        </div>
+        <div class="gender-details">
+          <label>Gender</label>
+          <div class="category">
+            <input type="radio" name="gender" id="dot-1" value="Male"/>
+            <label for="dot-1">
+              <span class="dot one"></span>
+              <span class="gender">Male</span>
+            </label>
+            <input type="radio" name="gender" id="dot-2" value="Female"/>
+            <label for="dot-2">
+              <span class="dot two"></span>
+              <span class="gender">Female</span>
+            </label>
+            <input type="radio" name="gender" id="dot-3" value="Other"/>
+            <label for="dot-3">
+              <span class="dot three"></span>
+              <span class="gender">Other</span>
+            </label>
+          </div>
+        </div>
+        <div class="button">
+            <input type="submit" value="Register" />
+        </div>
+    </form>
+    </div>
+  </div>
+ 
+  <script>
+    const password = document.getElementById('id_password');
+    const confirmPassword = document.getElementById('id_confirm_password');
+    const errorMessage = document.getElementById('error-message');
+ 
+    function isValidPassword(pwd) {
+        const minLength = 8;
+        const hasLetter = /[a-zA-Z]/.test(pwd);
+        const hasNumber = /[0-9]/.test(pwd);
+        return pwd.length >= minLength && hasLetter && hasNumber;
+    }
+ 
+    function validatePassword() {
+        if (!isValidPassword(password.value)) {
+            errorMessage.textContent = 'Password must be at least 8 characters with Alphanumeric';
+            return false;
+        } else if (confirmPassword.value !== password.value) {
+            errorMessage.textContent = 'Passwords do not match';
+            return false;
+        } else {
+            errorMessage.textContent = '';
+            return true;
+        }
+    }
+ 
+    password.addEventListener('input', validatePassword);
+    confirmPassword.addEventListener('input', validatePassword);
+</script>
+ 
+</body>
+ 
+</html>
