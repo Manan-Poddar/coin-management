@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from authentication.models import User
+from django.contrib.postgres.fields import ArrayField
 
 class Coin(models.Model):
     denomination = models.CharField(max_length=100)
@@ -33,6 +34,13 @@ class CoinStateCondition(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     front_image = models.ImageField( upload_to="images/coins", blank=True, null=True, default="images/coins")
     back_image = models.ImageField( upload_to="images/coins/coin1.jpg", blank=True, null=True)
+    INCLUSION_CHOICES = [
+        ('Y', 'Compulsory'),
+        ('R', 'Recommended'),
+        ('N', 'Not Included'),
+    ]
+    inclusion_status = models.CharField(max_length=1, choices=INCLUSION_CHOICES, default='N')
+
 
     class Meta:
         unique_together = ('coin', 'state', 'condition')
@@ -78,3 +86,23 @@ class PasswordResetToken(models.Model):
 
     def is_expired(self):
         return timezone.now() > self.expires_at
+
+
+
+class UserSetOfCoin(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    set_counts = models.JSONField(null=True, blank=True)
+    coin = models.ForeignKey(Coin, on_delete=models.CASCADE, null=True, blank=True)
+    set_name = models.CharField(max_length=64, null=True, blank=True)
+
+    class Meta:
+        unique_together = ('user', 'coin') 
+
+
+class UniverseCoinSet(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    coin_set = models.ForeignKey(UserSetOfCoin, on_delete=models.CASCADE)
+
+# class SetNameCoins(models.Model):
+#     set_name = models.CharField(max_length=64, null=True, blank=True)
+#     coin_list =  models.JSONField(null=True, blank=True)

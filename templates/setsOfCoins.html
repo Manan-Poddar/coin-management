@@ -2,9 +2,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>Home</title>
+	<title>My Coin Details</title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <!-- Custom CSS for additional styling -->
+    <style>
+        .dataTables_wrapper .dataTables_filter {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .dataTables_wrapper .dataTables_filter label {
+            white-space: nowrap;
+        }
+        .dataTables_wrapper .dataTables_filter input {
+            margin-left: 10px;
+            width: 250px;
+        }
+    </style>
 <!--===============================================================================================-->	
 	<link rel="icon" type="image/png" href="{% static 'images/icons/favicon.png' %}"/>
 <!--===============================================================================================-->
@@ -34,33 +53,35 @@
 <!--===============================================================================================-->
 	<link rel="stylesheet" type="text/css" href="{% static 'css/util.css' %}">
 	<link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
-	<script src="{% static 'sweetalert2/sweetalert2.all.min.js' %}"></script>
-  <link rel="stylesheet" href="{% static 'sweetalert2/sweetalert2.min.css' %}">
+	
 <!--===============================================================================================-->
+<script src="{% static 'sweetalert2/sweetalert2.all.min.js' %}"></script>
+<!-- jsPDF library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<!-- html2canvas library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.5.0/html2canvas.min.js"></script>
 
+<link rel="stylesheet" href="{% static 'sweetalert2/sweetalert2.min.css' %}">
 </head>
 <body class="animsition">
 	
 	<!-- Header -->
-	<header>
+	<header class="header-v4">
 		<!-- Header desktop -->
 		<div class="container-menu-desktop">
 			<!-- Topbar -->
 			<div class="top-bar">
 				<div class="content-topbar flex-sb-m h-full container">
 					<div class="left-top-bar">
-						Coin Inventory Management System
+						Free shipping for standard order over $100
 					</div>
 
 					<div class="right-top-bar flex-w h-full">
 						
+
 						<a href="{% url 'login' %}" class="flex-c-m trans-04 p-lr-25">
-							{% if request.session.name %}
-									<p>Welcome, {{ request.session.name }}!</p>
-								{% else %}
-									<p>My Account</p>
-								{% endif %}
+							My Account
 						</a>
 
 						<a href="{% url 'logout' %}" class="flex-c-m trans-04 p-lr-25">
@@ -72,7 +93,7 @@
 				</div>
 			</div>
 
-			<div class="wrap-menu-desktop">
+			<div class="wrap-menu-desktop how-shadow1">
 				<nav class="limiter-menu-desktop container">
 					
 					<!-- Logo desktop -->		
@@ -83,22 +104,14 @@
 					<!-- Menu desktop -->
 					<div class="menu-desktop">
 						<ul class="main-menu">
-							<li class="active-menu">
+							<li>
 								<a href="{% url 'home' %}">Home</a>
 								
 							</li>
 
-							<li>
+							<li class="active-menu">
 								<a href="{% url 'my_coin' %}">My Coin</a>
 							</li>
-
-							<li>
-								<a href="{% url 'set-of-coins' %}">Sets</a>
-							</li>
-							s
-							{% comment %} <li>
-								<a href="blog.html">Blog</a>
-							</li> {% endcomment %}
 
 							<li>
 								<a href="#">About</a>
@@ -112,10 +125,12 @@
 
 					<!-- Icon header -->
 					<div class="wrap-icon-header flex-w flex-r-m">
-						<div class="icon-header-item cl2 hov-cl1 trans-04 p-r-11 p-l-10 icon-header-noti js-show-cart" data-notify="{{count}}">
+
+						<div class="icon-header-item cl2 hov-cl1 trans-04 p-l-22 p-r-11 icon-header-noti js-show-cart" data-notify="2">
 							<i class="zmdi zmdi-notifications"></i>
 						</div>
 
+						
 					</div>
 				</nav>
 			</div>	
@@ -125,7 +140,7 @@
 		<div class="wrap-header-mobile">
 			<!-- Logo moblie -->		
 			<div class="logo-mobile">
-				<a href="index.html"><img src="images/coins/CIMS.jpeg" alt="IMG-LOGO"></a>
+				<a href="index.html"><img src="{% static 'images/coins/CIMS.jpeg' %}" alt="IMG-LOGO"></a>
 			</div>
 
 			<!-- Icon header -->
@@ -133,6 +148,7 @@
 				<div class="icon-header-item cl2 hov-cl1 trans-04 p-r-11 js-show-modal-search">
 					<i class="zmdi zmdi-search"></i>
 				</div>
+
 				<div class="icon-header-item cl2 hov-cl1 trans-04 p-r-11 p-l-10 icon-header-noti js-show-cart" data-notify="{{count}}">
 					<i class="zmdi zmdi-notifications"></i>
 				</div>
@@ -154,7 +170,7 @@
 			<ul class="topbar-mobile">
 				<li>
 					<div class="left-top-bar">
-						Here is your title 
+						Coin Inventory Management System
 					</div>
 				</li>
 
@@ -163,29 +179,27 @@
 						
 
 						<a href="{% url 'login' %}" class="flex-c-m p-lr-10 trans-04">
-							{% if request.session.name %}
-									<p>Welcome, {{ request.session.name }}!</p>
-								{% else %}
-									<p>My Account</p>
-								{% endif %}
-													</a>
-
-						<a href="{% url 'logout' %}" class="flex-c-m p-lr-10 trans-04">
-							Logout
+							My Account
 						</a>
 
-						
+						<a href="{% url 'logout' %}" class="flex-c-m p-lr-10 trans-04">
+							Logoot
+						</a>
+
 					</div>
 				</li>
 			</ul>
 
 			<ul class="main-menu-m">
 				<li>
-					<a href="{% url 'home' %}">Home</a>	
+					<a href="{% url 'home' %}">Home</a>
+					<span class="arrow-main-menu-m">
+						<i class="fa fa-angle-right" aria-hidden="true"></i>
+					</span>
 				</li>
 
 				<li>
-					<a href="{% url 'my_coin' %}">My Coin</a>
+					<a href="{% url 'my_coin' %}">Mycoint</a>
 				</li>
 
 				<li>
@@ -195,9 +209,6 @@
 				<li>
 					<a href="{% url 'contact' %}">Contact</a>
 				</li>
-				<li>
-					<a href="{% url 'set-of-coins' %}">Sets</a>
-				</li>
 			</ul>
 		</div>
 
@@ -205,7 +216,7 @@
 		<div class="modal-search-header flex-c-m trans-04 js-hide-modal-search">
 			<div class="container-search-header">
 				<button class="flex-c-m btn-hide-modal-search trans-04 js-hide-modal-search">
-					<img src="images/icons/icon-close2.png" alt="CLOSE">
+					<img src="{% static 'images/icons/icon-close2.png' %}" alt="CLOSE">
 				</button>
 
 				<form class="wrap-search-header flex-w p-l-15">
@@ -242,7 +253,7 @@
 						</div>
 
 						<div class="header-cart-item-txt p-t-8">
-							<a href="{% url 'chat:chat-view' i.request_user.id %}" class="header-cart-item-name m-b-18 hov-cl1 trans-04">
+							<a href="#" class="header-cart-item-name m-b-18 hov-cl1 trans-04">
 								{{i.message}}
 							</a>
 
@@ -257,9 +268,67 @@
 		</div>
 	</div>
 
-	{% block coinbody %}{% endblock coinbody %}	
-
+	<!-- Product -->
+    <div class="container mt-5">
+		<!--START: message-->	
+		{% if messages %}
+		{% for message in messages %}
+		{% if message.tags %}
+		<script>
+			var messagetag = '{{message.tags}}'
+			if (messagetag === 'danger' || messagetag === 'debug') {
+				msgtag='error'                                        
+			} else {
+				msgtag=messagetag                                      
+			}
+			Swal.fire({
+				position: 'top-end',
+				icon: msgtag,
+				title: '{{ message }}',
+				showConfirmButton: false,
+				showCloseButton: true
+			});
+		</script> 
+		{% endif %}
+		{% endfor %}
+		{% endif %}
+		<!--END: message-->
+        <h3 class="mb-4">Your coin detals </h3>
+		<button id="downloadBtn" class="btn btn-primary my-3 float-right">Download CSV</button>
+        <table id="example" class="table table-striped table-bordered" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>denomination</th>
+                    <th>description</th>
+                    <th>metal</th>
+                    <th>Year</th>
+                    <th>State</th>
+                    <th>Condition</th>
+					<th>Price</th>
+					<th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+				{% for item in data %}
+                <tr>
+                    <td>{{item.user.first_name}}</td>
+                    <td>{{item.coin_state_condition.coin.denomination}}</td>
+                    <td>{{item.coin_state_condition.coin.description}}</td>
+                    <td>{{item.coin_state_condition.coin.metal}}</td>
+                    <td>{{item.coin_state_condition.coin.year}}</td>
+                    <td>{{item.coin_state_condition.state.name}}</td>
+                    <td>{{item.coin_state_condition.condition.name}}</td>
+					<td>{{item.coin_state_condition.price}}</td>
+					<td>{{item.count}}</td>
+                </tr>
+				{% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
 	
+		
 
 	<!-- Footer -->
 	<footer class="bg3 p-t-75 p-b-32">
@@ -271,7 +340,7 @@
 
 				<p class="stext-107 cl6 txt-center">
 					<!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
-Copyright &copy;<script>document.write(new Date().getFullYear());</script> All rights reserved | Made with <i class="fa fa-heart-o" aria-hidden="true"></i> 
+Copyright &copy;<script>document.write(new Date().getFullYear());</script> All rights reserved |Made with <i class="fa fa-heart-o" aria-hidden="true"></i>
 <!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
 
 				</p>
@@ -331,12 +400,43 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 		    });
 		});
 	</script>
+	<script>
+		document.getElementById('downloadBtn').addEventListener('click', function () {
+			var table = document.getElementById('example');
+			var rows = table.querySelectorAll('tr');
+			var csv = [];
+		
+			// Loop through table rows
+			for (var i = 0; i < rows.length; i++) {
+				var row = [];
+				var cols = rows[i].querySelectorAll('td, th');
+		
+				// Loop through each column in the row
+				for (var j = 0; j < cols.length; j++) {
+					// Remove any new lines and commas in the data
+					row.push(cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/,/g, ''));
+				}
+				csv.push(row.join(','));
+			}
+		
+			// Create CSV string and a download link
+			var csvString = csv.join('\n');
+			var a = document.createElement('a');
+			a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvString);
+			a.target = '_blank';
+			a.download = 'coins_data.csv';
+		
+			// Trigger the download
+			a.click();
+		});
+		
+	</script>
 <!--===============================================================================================-->
 	<script src="{% static 'vendor/isotope/isotope.pkgd.min.js' %}"></script>
 <!--===============================================================================================-->
 	<script src="{% static 'vendor/sweetalert/sweetalert.min.js' %}"></script>
 	<script>
-		$('.js-addwish-b2').on('click', function(e){
+		$('.js-addwish-b2, .js-addwish-detail').on('click', function(e){
 			e.preventDefault();
 		});
 
@@ -361,7 +461,7 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 			});
 		});
 
-		/*---------------------------------------------*/
+		/---------------------------------------------/
 
 		$('.js-addcart-detail').each(function(){
 			var nameProduct = $(this).parent().parent().parent().parent().find('.js-name-detail').html();
@@ -390,6 +490,19 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 	</script>
 <!--===============================================================================================-->
 	<script src="{% static 'js/main.js' %}"></script>
+	<!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+    <!-- Initialization of DataTable -->
+    <script>
+        $(document).ready(function() {
+            $('#example').DataTable();
+        });
+    </script>
 
 </body>
 </html>

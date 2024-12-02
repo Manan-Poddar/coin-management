@@ -17,6 +17,7 @@ urlpatterns = [
     path('submit-count', views.submitCount, name = 'submit-count' ),
     path('request-coin', views.requestCoin, name = 'request-coin' ),
     path('forgot_password', views.ForgotPassword, name= 'forgot-password'),
-    path('reset_password/<str:token>/', views.ResetPassword, name = 'reset-password')
+    path('reset_password/<str:token>/', views.ResetPassword, name = 'reset-password'),
+    path('set_of_coins/', views.SetOfCoins, name = 'set-of-coins')
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

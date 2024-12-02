@@ -18,6 +18,8 @@ import string
 from datetime import timedelta
 import csv
 from django.views.decorators.csrf import csrf_exempt
+from django.db import transaction
+from collections import defaultdict, Counter
 
 def generate_otp():
     return random.randint(100000, 999999)
@@ -282,6 +284,73 @@ def submitCount(request):
             ownership.count = quantity
             ownership.save()
 
+        # dict = {coin_state_condition_id : state_id}
+        required_coins = [{
+        'coin_state_condition_id': entry['id'],
+        'state_id': entry['state_id'],
+        'condition_id': entry['condition_id']
+        } for entry in CoinStateCondition.objects.filter(inclusion_status='Y', coin_id=coin_state_condition.coin_id).values('id', 'state_id', 'condition_id')]
+       
+        user_ownerships = [{
+        'coin_state_condition_id': entry['coin_state_condition_id'],
+        'state_id': entry['coin_state_condition__state_id'],
+        'condition_id': entry['coin_state_condition__condition_id']
+        } for entry in UserCoinOwnership.objects.filter(user=user_id,coin_state_condition__inclusion_status='Y',count__gt=0).select_related('coin_state_condition__coin', 'coin_state_condition__state', 'coin_state_condition__condition').values('coin_state_condition_id', 'coin_state_condition__state_id', 'coin_state_condition__condition_id')]
+        print(user_ownerships, "user ownerships")
+        print(required_coins, "required_coins")
+        
+        user_ownerships_states = {state['state_id'] for state in user_ownerships}
+        required_states = {state['state_id'] for state in required_coins}
+        if user_ownerships_states.issubset(required_states):
+            required_coin_map = {}
+            for entry in user_ownerships:
+                state = entry['state_id']
+                condition = entry['condition_id']
+                if state not in required_coin_map:
+                    required_coin_map[state] = set()
+                required_coin_map[state].add(condition)   
+            common_conditions = set.intersection(*required_coin_map.values())
+            complete_set = [entry for entry in user_ownerships if entry['condition_id'] in common_conditions]
+            uncomplete_set = [entry for entry in user_ownerships if entry['condition_id'] not in common_conditions]
+            print(complete_set, uncomplete_set)
+            all_sets = complete_set + uncomplete_set
+
+            # Count occurrences of each condition_id
+            condition_counts = Counter(entry['condition_id'] for entry in all_sets)
+
+            condition_ids = list(condition_counts.keys())
+            condition_mapping = {
+                condition.condition.id: condition.condition.name
+                for condition in CoinStateCondition.objects.filter(condition_id__in=condition_ids).select_related('condition')
+            }
+
+            # Prepare the JSON-compatible list of dictionaries with condition names
+            coin_state_condition_data = [
+                {
+                    "condition_name": condition_mapping.get(condition_id, "Unknown"),
+                    "count": count
+                }
+                for condition_id, count in condition_counts.items()
+            ]
+
+            # Save to the UserSetOfCoins model
+            parent_coin = Coin.objects.get(id=coin_state_condition.coin_id)
+
+            UserSetOfCoin.objects.update_or_create(
+                user=user,  # Match the user
+                coin=parent_coin,  # Match the coin
+                defaults={
+                    "set_counts": coin_state_condition_data,  # Update this field
+                },
+                set_name = "Set 1"
+            )
+            
+        user_set_coins = UserSetOfCoin.objects.filter(user = user)
+        
+
+
+        print(f"The number of pairs of condition_ids that are the same across different states is {common_conditions} and length is {len(common_conditions)}.")
+
         return JsonResponse({'message': f"{user.first_name} requested {quantity} coins  {coin_state_condition}", 'status': 'success'})
         
         # except Exception as e:
@@ -396,7 +465,6 @@ def ResetPassword(request, token):
         confirm_password = request.POST.get('confirm_password')
         print(new_password, confirm_password)
         if new_password == confirm_password:
-            print("hello")
             user.password = new_password
             user.save()
             token_obj.delete()  # Token used, delete it
@@ -405,3 +473,29 @@ def ResetPassword(request, token):
             return HttpResponse("Passwords do not match.", status=400)
         
     return render(request, 'reset_password.html', {'token': token})
+
+
+
+
+def SetOfCoins(request):
+    logged_user = request.session.get('user_id', None)
+    if not logged_user:
+        messages.error(request,'Login required to access this page')
+        return redirect('login')
+    data = UserSetOfCoins.objects.get(user=logged_user)
+    data = CoinStateCondition.objects.get(id=id)
+
+    notifications = PushNotification.objects.filter(user=logged_user)
+    try:
+        coin_count = UserCoinOwnership.objects.get(user=logged_user,coin_state_condition=data.id )
+        count = coin_count.count
+    except:
+        count = 0
+    
+    context={
+        'data': data,
+        'count' : count,
+        'notifications' : notifications,
+    }
+    return render(request, 'setsOfCoins.html', context)
+    
