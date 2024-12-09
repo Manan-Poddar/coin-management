@@ -109,10 +109,12 @@
 								
 							</li>
 
-							<li class="active-menu">
+							<li >
 								<a href="{% url 'my_coin' %}">My Coin</a>
 							</li>
-
+                            <li class="active-menu">
+								<a href="{% url 'set-of-coins' %}">Sets</a>
+							</li>
 							<li>
 								<a href="#">About</a>
 							</li>
@@ -199,9 +201,11 @@
 				</li>
 
 				<li>
-					<a href="{% url 'my_coin' %}">Mycoint</a>
+					<a href="{% url 'my_coin' %}">My coin</a>
 				</li>
-
+                <li>
+					<a href="{% url 'set-of-coins' %}">Sets</a>
+				</li>
 				<li>
 					<a href="#">About</a>
 				</li>
@@ -293,7 +297,7 @@
 		{% endfor %}
 		{% endif %}
 		<!--END: message-->
-        <h3 class="mb-4">Your coin detals </h3>
+        <h3 class="mb-4">Your Set detals </h3>
 		<button id="downloadBtn" class="btn btn-primary my-3 float-right">Download CSV</button>
         <table id="example" class="table table-striped table-bordered" style="width:100%">
             <thead>
