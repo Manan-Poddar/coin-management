@@ -309,6 +309,7 @@ def submitCount(request):
                 if state not in required_coin_map:
                     required_coin_map[state] = set()
                 required_coin_map[state].add(condition)   
+            print(required_coin_map)
             common_conditions = set.intersection(*required_coin_map.values())
             complete_set = [entry for entry in user_ownerships if entry['condition_id'] in common_conditions]
             uncomplete_set = [entry for entry in user_ownerships if entry['condition_id'] not in common_conditions]
@@ -346,8 +347,19 @@ def submitCount(request):
             )
             
         user_set_coins = UserSetOfCoin.objects.filter(user = user)
-        
+        is_make_set = [i.coin_id for i in user_set_coins]
+        make_set = SetNameCoins.objects.get(coin_list = is_make_set)
+        # Get the related set name for the list of coins
+        try:
+            make_set = SetNameCoins.objects.get(coin_list=is_make_set)
+        except SetNameCoins.DoesNotExist:
+            make_set = None
 
+        
+        if make_set:
+            # set_details = [i.id for i in user_set_coins]
+            for k in user_set_coins:
+                UniverseCoinSet.objects.update_or_create(user = user, coin_set = k, set_name = make_set, defaults={})
 
         print(f"The number of pairs of condition_ids that are the same across different states is {common_conditions} and length is {len(common_conditions)}.")
 
@@ -482,19 +494,10 @@ def SetOfCoins(request):
     if not logged_user:
         messages.error(request,'Login required to access this page')
         return redirect('login')
-    data = UserSetOfCoins.objects.get(user=logged_user)
-    data = CoinStateCondition.objects.get(id=id)
-
+    data = UniverseCoinSet.objects.filter(user=logged_user)
     notifications = PushNotification.objects.filter(user=logged_user)
-    try:
-        coin_count = UserCoinOwnership.objects.get(user=logged_user,coin_state_condition=data.id )
-        count = coin_count.count
-    except:
-        count = 0
-    
     context={
         'data': data,
-        'count' : count,
         'notifications' : notifications,
     }
     return render(request, 'setsOfCoins.html', context)
