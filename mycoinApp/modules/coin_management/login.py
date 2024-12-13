@@ -285,89 +285,248 @@ def submitCount(request):
             ownership.save()
 
         # dict = {coin_state_condition_id : state_id}
-        required_coins = [{
-        'coin_state_condition_id': entry['id'],
-        'state_id': entry['state_id'],
-        'condition_id': entry['condition_id']
-        } for entry in CoinStateCondition.objects.filter(inclusion_status='Y', coin_id=coin_state_condition.coin_id).values('id', 'state_id', 'condition_id')]
-       
-        user_ownerships = [{
-        'coin_state_condition_id': entry['coin_state_condition_id'],
-        'state_id': entry['coin_state_condition__state_id'],
-        'condition_id': entry['coin_state_condition__condition_id']
-        } for entry in UserCoinOwnership.objects.filter(user=user_id,coin_state_condition__inclusion_status='Y',count__gt=0).select_related('coin_state_condition__coin', 'coin_state_condition__state', 'coin_state_condition__condition').values('coin_state_condition_id', 'coin_state_condition__state_id', 'coin_state_condition__condition_id')]
+        required_coins = [
+            {
+                'coin_state_condition_id': entry['id'],
+                'state_id': entry['state_id'],
+                'condition_id': entry['condition_id'],
+                'coin_id': entry['coin_id']
+            }
+            for entry in CoinStateCondition.objects.filter(
+                inclusion_status='Y', coin_id=coin_state_condition.coin_id
+            ).values('id', 'state_id', 'condition_id', 'coin_id')
+        ]
+    
+        # Fetch user ownerships
+        user_ownerships = [
+            {
+                'coin_state_condition_id': entry['coin_state_condition_id'],
+                'state_id': entry['coin_state_condition__state_id'],
+                'condition_id': entry['coin_state_condition__condition_id'],
+                'coin_id': entry['coin_state_condition__coin_id']
+            }
+            for entry in UserCoinOwnership.objects.filter(
+                user=user_id, coin_state_condition__inclusion_status='Y', count__gt=0
+            ).select_related(
+                'coin_state_condition__coin',
+                'coin_state_condition__state',
+                'coin_state_condition__condition'
+            ).values(
+                'coin_state_condition_id', 'coin_state_condition__state_id',
+                'coin_state_condition__condition_id', 'coin_state_condition__coin_id'
+            )
+        ]
+        check_coin_state_ownership(user_ownerships, required_coins)
         print(user_ownerships, "user ownerships")
         print(required_coins, "required_coins")
-        
+    
+        # Check if user states are a subset of required states
         user_ownerships_states = {state['state_id'] for state in user_ownerships}
         required_states = {state['state_id'] for state in required_coins}
-        if user_ownerships_states.issubset(required_states):
-            required_coin_map = {}
-            for entry in user_ownerships:
-                state = entry['state_id']
-                condition = entry['condition_id']
-                if state not in required_coin_map:
-                    required_coin_map[state] = set()
-                required_coin_map[state].add(condition)   
-            print(required_coin_map)
-            common_conditions = set.intersection(*required_coin_map.values())
-            complete_set = [entry for entry in user_ownerships if entry['condition_id'] in common_conditions]
-            uncomplete_set = [entry for entry in user_ownerships if entry['condition_id'] not in common_conditions]
-            print(complete_set, uncomplete_set)
-            all_sets = complete_set + uncomplete_set
+    
+        # if user_ownerships_states.issubset(required_states):
+        if check_coin_state_ownership(user_ownerships, required_coins):
+            # required_coin_map = {}
+            # for entry in user_ownerships:
+            #     state = entry['state_id']
+            #     condition = entry['condition_id']
+            #     if state not in required_coin_map:
+            #         required_coin_map[state] = set()
+            #     required_coin_map[state].add(condition)
+    
+            # print(required_coin_map)
+    
+            # common_conditions = set.intersection(*required_coin_map.values())
+            # complete_set = [entry for entry in user_ownerships if entry['condition_id'] in common_conditions]
+            # uncomplete_set = [entry for entry in user_ownerships if entry['condition_id'] not in common_conditions]
+    
+            # print("complete set", complete_set, "Uncomplete set", uncomplete_set)
+            # all_sets = complete_set + uncomplete_set
+            # print("all sets", all_sets)
 
             # Count occurrences of each condition_id
-            condition_counts = Counter(entry['condition_id'] for entry in all_sets)
+            grouped_data = defaultdict(list)
+            for entry in user_ownerships:
+                grouped_data[entry['coin_id']].append(entry)
 
-            condition_ids = list(condition_counts.keys())
-            condition_mapping = {
-                condition.condition.id: condition.condition.name
-                for condition in CoinStateCondition.objects.filter(condition_id__in=condition_ids).select_related('condition')
-            }
-
-            # Prepare the JSON-compatible list of dictionaries with condition names
-            coin_state_condition_data = [
-                {
-                    "condition_name": condition_mapping.get(condition_id, "Unknown"),
-                    "count": count
+            # Step 2: Process each group separately
+            for coin_id, coin_entries in grouped_data.items():
+                # Count occurrences of each condition_id for this specific coin_id
+                condition_counts = Counter(entry['condition_id'] for entry in coin_entries)
+                
+                # Get all condition_ids to fetch their names
+                condition_ids = list(condition_counts.keys())
+                
+                # Step 3: Get the mapping of condition_id to condition_name using ORM
+                condition_mapping = {
+                    condition.condition.id: condition.condition.name
+                    for condition in CoinStateCondition.objects.filter(
+                        condition_id__in=condition_ids
+                    ).select_related('condition')
                 }
-                for condition_id, count in condition_counts.items()
-            ]
-
-            # Save to the UserSetOfCoins model
-            parent_coin = Coin.objects.get(id=coin_state_condition.coin_id)
-
-            UserSetOfCoin.objects.update_or_create(
-                user=user,  # Match the user
-                coin=parent_coin,  # Match the coin
-                defaults={
-                    "set_counts": coin_state_condition_data,  # Update this field
-                },
-                set_name = "Set 1"
-            )
-            
-        user_set_coins = UserSetOfCoin.objects.filter(user = user)
-        is_make_set = [i.coin_id for i in user_set_coins]
-        make_set = SetNameCoins.objects.get(coin_list = is_make_set)
-        # Get the related set name for the list of coins
-        try:
-            make_set = SetNameCoins.objects.get(coin_list=is_make_set)
-        except SetNameCoins.DoesNotExist:
-            make_set = None
-
-        
-        if make_set:
-            # set_details = [i.id for i in user_set_coins]
-            for k in user_set_coins:
-                UniverseCoinSet.objects.update_or_create(user = user, coin_set = k, set_name = make_set, defaults={})
-
-        print(f"The number of pairs of condition_ids that are the same across different states is {common_conditions} and length is {len(common_conditions)}.")
-
-        return JsonResponse({'message': f"{user.first_name} requested {quantity} coins  {coin_state_condition}", 'status': 'success'})
-        
+                
+                # Prepare the JSON-compatible list of dictionaries with condition names
+                coin_state_condition_data = [
+                    {
+                        "condition_name": condition_mapping.get(condition_id, "Unknown"),
+                        "count": count
+                    }
+                    for condition_id, count in condition_counts.items()
+                ]
+                
+                # Step 4: Save to the UserSetOfCoins model for the current coin_id
+                parent_coin = Coin.objects.get(id=coin_id)
+                UserSetOfCoin.objects.update_or_create(
+                    user=user,  # Match the user
+                    coin=parent_coin,  # Match the coin
+                    defaults={
+                        "set_counts": coin_state_condition_data,  # Update this field
+                    },
+                    set_name="Set 1"
+                )
+            # Fetch user's set of coins and link to a set name if available
+            user_set_coins = UserSetOfCoin.objects.filter(user=user_id)
+            is_make_set = [i.coin_id for i in user_set_coins]
+    
+            try:
+                make_set = SetNameCoins.objects.get(coin_list=is_make_set)
+            except SetNameCoins.DoesNotExist:
+                make_set = None
+    
+            if make_set:
+                for k in user_set_coins:
+                    UniverseCoinSet.objects.update_or_create(
+                        user=user, coin_set=k, set_name=make_set, defaults={}
+                    )
+    
+            # print(f"The number of pairs of condition_ids that are the same across different states is {common_conditions} and length is {len(common_conditions)}.")
+    
+        return JsonResponse({'message': f"{user.first_name} requested {quantity} coins {coin_state_condition}", 'status': 'success'})        
         # except Exception as e:
         #     return JsonResponse({'message': str(e), 'status': 'error'})
     return JsonResponse({'message': 'Invalid request', 'status': 'error'}, status=400)
+
+
+def check_coin_state_ownership(user_coin_ownership, required_coins):
+    # Step 1: Extract unique (coin_id, state_id) pairs from required_coins
+    required_pairs = {(entry['coin_id'], entry['state_id']) for entry in required_coins}
+    
+    # Step 2: Extract unique (coin_id, state_id) pairs from user_coin_ownership
+    user_pairs = {(entry['coin_id'], entry['state_id']) for entry in user_coin_ownership}
+    
+    # Step 3: Check if all required pairs exist in user pairs
+    missing_pairs = required_pairs - user_pairs
+    
+    # If there are missing pairs, return False; otherwise, return True
+    if missing_pairs:
+        print(f"Missing pairs: {missing_pairs}")  # Show missing (coin_id, state_id) pairs for debugging
+        return False
+    return True
+
+
+
+# def submitCount(request):
+#     if request.method == 'POST':
+#         # try:
+#         quantity = int(request.POST.get('count'))
+#         coinid = int(request.POST.get('coin-id'))
+#         user_id = int(request.session.get('user_id'))
+        
+#         coin_state_condition = get_object_or_404(CoinStateCondition, id=coinid)
+#         user = get_object_or_404(User, id=user_id)
+
+#         ownership, created = UserCoinOwnership.objects.get_or_create(user=user, coin_state_condition=coin_state_condition, defaults={'count': quantity})
+#         if not created:
+#             ownership.count = quantity
+#             ownership.save()
+
+#         # dict = {coin_state_condition_id : state_id}
+#         required_coins = [{
+#         'coin_state_condition_id': entry['id'],
+#         'state_id': entry['state_id'],
+#         'condition_id': entry['condition_id'],
+#         'coin_id' : entry['coin_id']
+#         } for entry in CoinStateCondition.objects.filter(inclusion_status='Y', coin_id=coin_state_condition.coin_id).values('id', 'state_id', 'condition_id', 'coin_id')]
+       
+#         user_ownerships = [{
+#         'coin_state_condition_id': entry['coin_state_condition_id'],
+#         'state_id': entry['coin_state_condition__state_id'],
+#         'condition_id': entry['coin_state_condition__condition_id'],
+#         'coin_id' : entry['coin_state_condition__coin_id']
+#         } for entry in UserCoinOwnership.objects.filter(user=user_id,coin_state_condition__inclusion_status='Y', count__gt=0).select_related('coin_state_condition__coin', 'coin_state_condition__state', 'coin_state_condition__condition', 'coin_state_condition__coin').values('coin_state_condition_id', 'coin_state_condition__state_id', 'coin_state_condition__condition_id', 'coin_state_condition__coin_id')]
+#         print(user_ownerships, "user ownerships")
+#         print(required_coins, "required_coins")
+        
+#         user_ownerships_states = {state['state_id'] for state in user_ownerships}
+#         required_states = {state['state_id'] for state in required_coins}
+#         if user_ownerships_states.issubset(required_states):
+#             required_coin_map = {}
+#             for entry in user_ownerships:
+#                 state = entry['state_id']
+#                 condition = entry['condition_id']
+#                 if state not in required_coin_map:
+#                     required_coin_map[state] = set()
+#                 required_coin_map[state].add(condition)   
+#             print(required_coin_map)
+#             common_conditions = set.intersection(*required_coin_map.values())
+#             complete_set = [entry for entry in user_ownerships if entry['condition_id'] in common_conditions]
+#             uncomplete_set = [entry for entry in user_ownerships if entry['condition_id'] not in common_conditions]
+#             print("complete set", complete_set, "Uncomplete set", uncomplete_set)
+#             all_sets = complete_set + uncomplete_set
+
+#             # Count occurrences of each condition_id
+#             condition_counts = Counter(entry['condition_id'] for entry in all_sets)
+
+#             condition_ids = list(condition_counts.keys())
+#             condition_mapping = {
+#                 condition.condition.id: condition.condition.name
+#                 for condition in CoinStateCondition.objects.filter(condition_id__in=condition_ids).select_related('condition')
+#             }
+
+#             # Prepare the JSON-compatible list of dictionaries with condition names
+#             coin_state_condition_data = [
+#                 {
+#                     "condition_name": condition_mapping.get(condition_id, "Unknown"),
+#                     "count": count
+#                 }
+#                 for condition_id, count in condition_counts.items()
+#             ]
+
+#             # Save to the UserSetOfCoins model
+#             parent_coin = Coin.objects.get(id=coin_state_condition.coin_id)
+#             UserSetOfCoin.objects.update_or_create(
+#                 user=user,  # Match the user
+#                 coin=parent_coin,  # Match the coin
+#                 defaults={
+#                     "set_counts": coin_state_condition_data,  # Update this field
+#                 },
+#                 set_name = "Set 1"
+#             )
+#             user_set_coins = UserSetOfCoin.objects.filter(user = user)
+#             is_make_set = [i.coin_id for i in user_set_coins]
+#             # make_set = SetNameCoins.objects.get(coin_list = is_make_set)
+#             # Get the related set name for the list of coins
+#             try:
+#                 make_set = SetNameCoins.objects.get(coin_list=is_make_set)
+#             except SetNameCoins.DoesNotExist:
+#                 make_set = None
+                
+#             if make_set:
+#                 # set_details = [i.id for i in user_set_coins]
+#                 for k in user_set_coins:
+#                     UniverseCoinSet.objects.update_or_create(user = user, coin_set = k, set_name = make_set, defaults={})
+
+#             print(f"The number of pairs of condition_ids that are the same across different states is {common_conditions} and length is {len(common_conditions)}.")
+
+#         return JsonResponse({'message': f"{user.first_name} requested {quantity} coins  {coin_state_condition}", 'status': 'success'})
+        
+#         # except Exception as e:
+#         #     return JsonResponse({'message': str(e), 'status': 'error'})
+#     return JsonResponse({'message': 'Invalid request', 'status': 'error'}, status=400)
+
+
+
+
 
 # def requestCoin(request):
 #     if request.method == 'POST':
