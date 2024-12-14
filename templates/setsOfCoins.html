@@ -302,6 +302,29 @@
         <table id="example" class="table table-striped table-bordered" style="width:100%">
             <thead>
                 <tr>
+                    <th>Set Name</th>
+                    <th>Coins in Set</th>
+					<th>Number of Sets</th>
+					<th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+				{% for i in data %}
+							<tr>
+								<td>{{ i.set_name }}</td> 
+								<td>
+									{% for item in i.set_counts %}
+										{{ item.year }} {{ item.state_name }} ({{ item.condition_name }} - {{ item.count }}){% if not forloop.last %}, {% endif %}
+									{% endfor %}
+								</td>
+								<td>{{i.number_of_sets}}</td>
+								<td>{{i.price}}</td>
+							</tr>
+				{% endfor %} 
+			 </tbody> 
+
+			<!-- <thead>
+                <tr>
                     <th>Coin</th>
                     <th>Year</th>
                     <th>Set Name</th>
@@ -312,12 +335,12 @@
 				{% for i in data %}
 							<tr>
 								<td>{{ i.coin_set.coin.denomination }}</td> 
-								<td>{{ i.coin_set.coin.year}}</td>  <!-- Display other coin details from UserSetOfCoin -->
-								<td>{{ i.set_name.set_name }}</td>  <!-- Display the set name -->
-								<td>{{ i.coin_set.set_counts }}</td>  <!-- Display the coin metal -->
+								<td>{{ i.coin_set.coin.year}}</td>
+								<td>{{ i.set_name.set_name }}</td>  
+								<td>{{ i.coin_set.set_counts }}</td>  
 							</tr>
 				{% endfor %}
-			</tbody>
+			</tbody> -->
         </table>
     </div>
     

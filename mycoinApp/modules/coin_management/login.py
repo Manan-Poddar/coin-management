@@ -284,7 +284,6 @@ def submitCount(request):
             ownership.count = quantity
             ownership.save()
 
-        # dict = {coin_state_condition_id : state_id}
         required_coins = [
             {
                 'coin_state_condition_id': entry['id'],
@@ -303,79 +302,67 @@ def submitCount(request):
                 'coin_state_condition_id': entry['coin_state_condition_id'],
                 'state_id': entry['coin_state_condition__state_id'],
                 'condition_id': entry['coin_state_condition__condition_id'],
-                'coin_id': entry['coin_state_condition__coin_id']
+                'coin_id': entry['coin_state_condition__coin_id'],
+                'count' : entry['count']
             }
             for entry in UserCoinOwnership.objects.filter(
                 user=user_id, coin_state_condition__inclusion_status='Y', count__gt=0
             ).select_related(
                 'coin_state_condition__coin',
                 'coin_state_condition__state',
-                'coin_state_condition__condition'
+                'coin_state_condition__condition',
+                'count'
             ).values(
                 'coin_state_condition_id', 'coin_state_condition__state_id',
-                'coin_state_condition__condition_id', 'coin_state_condition__coin_id'
+                'coin_state_condition__condition_id', 'coin_state_condition__coin_id', 'count'
             )
         ]
-        check_coin_state_ownership(user_ownerships, required_coins)
+
         print(user_ownerships, "user ownerships")
         print(required_coins, "required_coins")
     
-        # Check if user states are a subset of required states
-        user_ownerships_states = {state['state_id'] for state in user_ownerships}
-        required_states = {state['state_id'] for state in required_coins}
-    
-        # if user_ownerships_states.issubset(required_states):
         if check_coin_state_ownership(user_ownerships, required_coins):
-            # required_coin_map = {}
-            # for entry in user_ownerships:
-            #     state = entry['state_id']
-            #     condition = entry['condition_id']
-            #     if state not in required_coin_map:
-            #         required_coin_map[state] = set()
-            #     required_coin_map[state].add(condition)
-    
-            # print(required_coin_map)
-    
-            # common_conditions = set.intersection(*required_coin_map.values())
-            # complete_set = [entry for entry in user_ownerships if entry['condition_id'] in common_conditions]
-            # uncomplete_set = [entry for entry in user_ownerships if entry['condition_id'] not in common_conditions]
-    
-            # print("complete set", complete_set, "Uncomplete set", uncomplete_set)
-            # all_sets = complete_set + uncomplete_set
-            # print("all sets", all_sets)
-
-            # Count occurrences of each condition_id
             grouped_data = defaultdict(list)
             for entry in user_ownerships:
                 grouped_data[entry['coin_id']].append(entry)
 
             # Step 2: Process each group separately
             for coin_id, coin_entries in grouped_data.items():
-                # Count occurrences of each condition_id for this specific coin_id
-                condition_counts = Counter(entry['condition_id'] for entry in coin_entries)
+                # Create a unique set of (condition_id, state_id) tuples to fetch data from CoinStateCondition
+                unique_conditions = {(entry['condition_id'], entry['state_id']) for entry in coin_entries}
                 
-                # Get all condition_ids to fetch their names
-                condition_ids = list(condition_counts.keys())
-                
-                # Step 3: Get the mapping of condition_id to condition_name using ORM
+                # Extract condition_ids and state_ids separately
+                condition_ids = [condition_id for condition_id, _ in unique_conditions]
+                state_ids = [state_id for _, state_id in unique_conditions]
+
+                # Step 3: Get the mapping of (condition_id, state_id) to condition_name and state_name
                 condition_mapping = {
-                    condition.condition.id: condition.condition.name
+                    (condition.condition.id, condition.state.id): {
+                        "condition_name": condition.condition.name,
+                        "state_name": condition.state.name
+                    }
                     for condition in CoinStateCondition.objects.filter(
-                        condition_id__in=condition_ids
-                    ).select_related('condition')
+                        condition_id__in=condition_ids, state_id__in=state_ids
+                    ).select_related('condition', 'state')
                 }
+
+                # Get the parent coin to retrieve its year
+                parent_coin = Coin.objects.get(id=coin_id)
                 
-                # Prepare the JSON-compatible list of dictionaries with condition names
+                # Step 4: Prepare the JSON-compatible list of dictionaries
                 coin_state_condition_data = [
                     {
-                        "condition_name": condition_mapping.get(condition_id, "Unknown"),
-                        "count": count
+                        "condition_name": condition_mapping.get((entry['condition_id'], entry['state_id']), {}).get("condition_name", "Unknown"),
+                        "state_name": condition_mapping.get((entry['condition_id'], entry['state_id']), {}).get("state_name", "Unknown"),
+                        "state_id": entry['state_id'],
+                        "count": entry['count'],  # Directly use the count from user_ownerships
+                        "year": parent_coin.year
                     }
-                    for condition_id, count in condition_counts.items()
+                    for entry in coin_entries
                 ]
                 
                 # Step 4: Save to the UserSetOfCoins model for the current coin_id
-                parent_coin = Coin.objects.get(id=coin_id)
+                
                 UserSetOfCoin.objects.update_or_create(
                     user=user,  # Match the user
                     coin=parent_coin,  # Match the coin
@@ -398,9 +385,6 @@ def submitCount(request):
                     UniverseCoinSet.objects.update_or_create(
                         user=user, coin_set=k, set_name=make_set, defaults={}
                     )
-    
-            # print(f"The number of pairs of condition_ids that are the same across different states is {common_conditions} and length is {len(common_conditions)}.")
-    
         return JsonResponse({'message': f"{user.first_name} requested {quantity} coins {coin_state_condition}", 'status': 'success'})        
         # except Exception as e:
         #     return JsonResponse({'message': str(e), 'status': 'error'})
@@ -655,8 +639,25 @@ def SetOfCoins(request):
         return redirect('login')
     data = UniverseCoinSet.objects.filter(user=logged_user)
     notifications = PushNotification.objects.filter(user=logged_user)
+    combined_data = {}
+    for i in data:
+        set_id = i.set_name.id
+        if set_id not in combined_data:
+            combined_data[set_id] = {
+                "set_name": i.set_name.set_name,
+                "set_counts": i.coin_set.set_counts if i.coin_set else [],  # If i.coin_set exists
+                "price": i.set_name.price,
+                "number_of_sets": None
+            }
+        else:
+            combined_data[set_id]["set_counts"] += i.coin_set.set_counts  # Merge lists
+        min_count = min(item['count'] for item in i.coin_set.set_counts) if i.coin_set.set_counts else None
+        combined_data[set_id]["number_of_sets"] = min_count
+    # If you want to convert the combined_data dict to a list of dictionaries
+    combined_data_list = list(combined_data.values())
+    print(combined_data_list)
     context={
-        'data': data,
+        'data': combined_data_list,
         'notifications' : notifications,
     }
     return render(request, 'setsOfCoins.html', context)

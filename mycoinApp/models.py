@@ -102,11 +102,11 @@ class UserSetOfCoin(models.Model):
 class SetNameCoins(models.Model):
     set_name = models.CharField(max_length=64, null=True, blank=True)
     coin_list =  models.JSONField(null=True, blank=True)
-
+    price = models.CharField(max_length = 100, null=True, blank=True)
 
 class UniverseCoinSet(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    set_name = models.ForeignKey(SetNameCoins, on_delete=models.CASCADE, null=True, blank=True)
+    set_name = models.ForeignKey(SetNameCoins, on_delete=models.CASCADE, null=True, blank=True, related_name='set_name_coins')
     # coin_set = models.JSONField(null=True, blank=True)
     coin_set = models.ForeignKey(UserSetOfCoin, on_delete=models.CASCADE, null=True, blank=True)
 

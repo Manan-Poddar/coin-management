@@ -40,10 +40,10 @@ class UserSetOfCoinAdmin(admin.ModelAdmin):
 
 @admin.register(SetNameCoins)
 class SetNameCoinsAdmin(admin.ModelAdmin):
-    list_display = ('set_name', 'coin_list')
-    search_fields = ('set_name', 'coin_list')
+    list_display = ('set_name', 'coin_list', 'price')
+    search_fields = ('set_name', 'coin_list', 'price')
 
 @admin.register(UniverseCoinSet)
-class SetNameCoinsAdmin(admin.ModelAdmin):
+class UniverseCoinSetAdmin(admin.ModelAdmin):
     list_display = ('user', 'set_name', 'coin_set')
     search_fields = ('user', 'set_name', 'coin_set')
